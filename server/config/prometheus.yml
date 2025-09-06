@@ -7,8 +7,12 @@ scrape_configs:
       - targets: ['localhost:9090']  # Prometheus 自身的地址
   - job_name: 'clickhouse'
     static_configs:
-      - targets: ['clickhouse:9000']  # 使用服务名称
+      - targets: ['clickhouse-exporter:9116']  # 使用服务名称
+#      - targets: ['clickhouse:9000']  # 使用服务名称
   - job_name: 'pushgateway'
     static_configs:
       - targets: ['pushgateway:9091']  # 使用服务名称
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: [ 'rabbitmq_exporter:9419' ]
 

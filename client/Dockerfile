@@ -11,10 +11,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # 复制当前目录内容到工作目录
-COPY . .
+COPY client/ ./client/
+COPY pkg/ ./pkg/
+COPY client/config ./config
 
 # 编译 Go 应用程序
-RUN go build -o client-app ./main.go
+RUN go build -o client-app ./client
 
 # 使用一个更小的基础镜像
 FROM alpine:latest
@@ -24,6 +26,7 @@ WORKDIR /root/
 
 # 从构建阶段复制编译后的二进制文件
 COPY --from=builder /app/client-app .
+COPY --from=builder /app/config /root/config
 
 # 创建日志目录
 RUN mkdir -p /root/logs

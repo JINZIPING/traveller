@@ -1,6 +1,9 @@
 /*
 !/client/
 !/server/
+!/pkg/
+!/pkg/
+!/cmd/
 !/docker-compose.yml
 !/go.mod
 !/go.sum

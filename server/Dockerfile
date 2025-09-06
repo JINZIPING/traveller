@@ -11,12 +11,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # 复制必要的源代码文件
-COPY main.go ./  
-COPY internal/ ./internal/  
-COPY config/ ./config/
+COPY server/ ./server/
+COPY pkg/ ./pkg/
+COPY server/config ./config
 
 # 编译 Go 应用程序
-RUN go build -o server-app ./main.go
+RUN go build -o server-app ./server
 
 # 使用一个更小的基础镜像
 FROM alpine:latest
