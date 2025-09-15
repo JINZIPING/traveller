@@ -43,12 +43,13 @@ func NewTaskService(
 // HandleTCPTask 下发TCP探测任务
 func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
+		loc, _ := time.LoadLocation("Asia/Shanghai") // UTC+8
 		task := model.TCPProbeTask{
 			IP:        "1.1.1.1",
 			Port:      "80",
 			Timeout:   5,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().In(loc),
+			UpdatedAt: time.Now().In(loc),
 		}
 
 		err := dao.StoreTCPProbeTask(&task)
@@ -72,13 +73,15 @@ func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 // HandleICMPTask 下发ICMP探测任务
 func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
+		// todo 看看有没有更优雅的方法设置时间
+		loc, _ := time.LoadLocation("Asia/Shanghai") // UTC+8
 		task := model.ICMPProbeTask{
-			IP:        "1.1.1.1", // 示例IP，实际可从请求或数据库中获取
+			IP:        "1.1.1.1",
 			Count:     4,
 			Threshold: 10, // 丢包率阈值
 			Timeout:   5,  // 超时时间
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: time.Now().In(loc),
+			UpdatedAt: time.Now().In(loc),
 		}
 
 		err := dao.StoreICMPProbeTask(&task)

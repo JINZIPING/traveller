@@ -25,3 +25,7 @@ rabbitmq:
   tcp_result_routing_key: "tcp_result_routing_key"
 
 log_file: "/root/logs/client.log" # 日志文件路径，确保路径与 Dockerfile 中一致
+
+concurrency:
+  icmp: 100
+  tcp: 100

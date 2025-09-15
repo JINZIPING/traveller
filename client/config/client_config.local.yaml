@@ -26,3 +26,6 @@ rabbitmq:
 
 log_file: "./client/logs/client.log" # 日志文件路径，确保路径与 Dockerfile 中一致
 
+concurrency:
+  icmp: 100
+  tcp: 100

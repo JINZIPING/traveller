@@ -1,18 +1,39 @@
 package probe
 
 import (
+	"fmt"
 	"log"
 	"my_project/pkg/model"
+	"net"
 	"time"
 
 	probing "github.com/prometheus-community/pro-bing"
 )
 
+// icmpProbeFailure 封装失败返回逻辑
+func icmpProbeFailure(task *model.ICMPProbeTask, reason string) *model.ICMPProbeResult {
+	log.Printf("ICMP probe failed: ip=%s, reason=%s", task.IP, reason)
+	return &model.ICMPProbeResult{
+		IP:         task.IP,
+		Timestamp:  time.Now(),
+		PacketLoss: 100.0, // 失败时认为完全丢包
+		MinRTT:     0,
+		MaxRTT:     0,
+		AvgRTT:     0,
+		Threshold:  task.Threshold,
+		Success:    false,
+	}
+}
+
 func ExecuteICMPProbeTask(task *model.ICMPProbeTask) *model.ICMPProbeResult {
+	// 校验 IP
+	if net.ParseIP(task.IP) == nil {
+		return icmpProbeFailure(task, "invalid IP address")
+	}
+
 	pinger, err := probing.NewPinger(task.IP)
 	if err != nil {
-		log.Printf("Failed to create pinger: %v", err)
-		return nil
+		return icmpProbeFailure(task, fmt.Sprintf("failed to create pinger: %v", err))
 	}
 
 	pinger.Count = task.Count

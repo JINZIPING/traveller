@@ -46,12 +46,17 @@ func main() {
 	icmpResultKey := viper.GetString("rabbitmq.icmp_result_routing_key")
 	icmpResultFactory := rabbitmq.NewRabbitMQFactory(ch, exchange, icmpResultQueue, icmpResultKey)
 
+	maxConcurrencyTCP := viper.GetInt("concurrency.tcp")
+	maxConcurrencyICMP := viper.GetInt("concurrency.icmp")
+
 	// 5. 初始化 ClientService
 	clientService := service.NewClientService(
 		tcpTaskFactory,
 		tcpResultFactory,
 		icmpTaskFactory,
 		icmpResultFactory,
+		maxConcurrencyTCP,
+		maxConcurrencyICMP,
 	)
 
 	// 6. 启动任务消费

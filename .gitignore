@@ -1,10 +1,16 @@
+# 忽略所有文件
 /*
+
+# 保留这些目录和文件
 !/client/
 !/server/
-!/pkg/
 !/pkg/
 !/cmd/
 !/docker-compose.yml
 !/go.mod
 !/go.sum
 !/README.md
+
+# 但在 client 中排除 logs 目录
+/client/logs/
+/server/logs
