@@ -1,21 +1,24 @@
 mysql:
   user: "root"              # MySQL 用户名
-  password: ""      # MySQL 密码
-  host: "mysql"         # MySQL 主机地址
+  password: ""              # MySQL 密码
+  host: "localhost"         # MySQL 主机地址
   port: 3306                # MySQL 端口
   database: "my_database"   # MySQL 数据库名称
 
 clickhouse:
-  host: "clickhouse"         # ClickHouse 主机地址
+  host: "localhost"         # ClickHouse 主机地址
   port: 9000                # ClickHouse 端口
 
 prometheus:
-  host: "pushgateway"  # Prometheus的主机地址
+  host: "localhost"  # Prometheus的主机地址
   port: 9091            # Prometheus的端口号
   job: "random"         # Job名称，可根据需要配置
 
+  tcp:
+    job: "tcp"
+
 rabbitmq:
-  url: "amqp://guest:guest@server_rabbitmq:5672/"
+  url: "amqp://guest:guest@localhost:5672/"
   exchange: "my_exchange"
 
   # ICMP 队列
@@ -30,6 +33,6 @@ rabbitmq:
   tcp_task_routing_key: "tcp_task_routing_key"
   tcp_result_routing_key: "tcp_result_routing_key"
 
+log_file: "./server/logs/server.log" # 日志文件路径
 
-log_file: "/root/logs/server.log" # 日志文件路径
 
