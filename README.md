@@ -84,3 +84,22 @@ func (f *RabbitMQFactory) CreatePublisher() mq.TaskPublisher { ... }
 func (f *RabbitMQFactory) CreateConsumer() mq.ResultConsumer { ... }
 ```
 Server 和 Client 通过调用`factory.CreatePublisher()`/`factory.CreateConsumer()`来获取所需的 MQ 组件，不需要关心底层是 RabbitMQ 还是未来可能的 Kafka
+
+## 任务调度器（Scheduler）
+
+本项目内置了一个轻量级的任务调度器，用于管理网络探测任务（TCP/ICMP）。
+
+* **核心功能**
+
+    * 支持 **一次性任务** 和 **周期性任务**（通过 `interval_sec` 控制执行间隔）。
+    * 使用 `map[string]*tickJob` 管理任务，每个任务都有唯一 `jobID`（如 `icmp:8.8.8.8`、`tcp:1.1.1.1:80`）。
+    * 基于 `time.Ticker` 周期触发，任务逻辑与调度解耦。
+    * 提供 `Remove(jobID)` 方法，可优雅地停止并清理任务。
+
+* **设计优势**
+
+    * 无需依赖第三方调度服务，避免外部组件不可用时造成数据中断。
+    * 内置在 Server 中，保证探测任务 **持续性和可控性**。
+    * 通过 API 可灵活下发、暂停和删除任务，便于统一管理。
+
+
