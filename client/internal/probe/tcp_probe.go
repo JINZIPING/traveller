@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"my_project/pkg/model"
+	"my_project/pkg/utils/timeutil"
 	"net"
 	"strconv"
 	"time"
@@ -15,9 +16,10 @@ func tcpProbeFailure(task *model.TCPProbeTask, reason string) *model.TCPProbeRes
 	return &model.TCPProbeResult{
 		IP:        task.IP,
 		Port:      task.Port,
-		Timestamp: time.Now(),
 		Success:   false,
 		RTT:       0,
+		Timestamp: timeutil.NowUTC8(),
+		TaskTime:  task.CreatedAt,
 	}
 }
 
@@ -26,6 +28,10 @@ func ExecuteTCPProbeTask(task *model.TCPProbeTask) *model.TCPProbeResult {
 	// 校验 IP
 	if net.ParseIP(task.IP) == nil {
 		return tcpProbeFailure(task, "invalid IP address")
+	}
+
+	if task.Timeout <= 0 {
+		return tcpProbeFailure(task, "invalid timeout")
 	}
 
 	// 校验端口
@@ -50,7 +56,8 @@ func ExecuteTCPProbeTask(task *model.TCPProbeTask) *model.TCPProbeResult {
 	return &model.TCPProbeResult{
 		IP:        task.IP,
 		Port:      task.Port,
-		Timestamp: time.Now(),
+		Timestamp: timeutil.NowUTC8(),
+		TaskTime:  task.CreatedAt,
 		RTT:       rtt,
 		Success:   true,
 	}

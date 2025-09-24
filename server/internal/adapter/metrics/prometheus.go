@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"my_project/pkg/model"
+	"my_project/pkg/utils/timeutil"
 	"net/http"
 	"time"
 )
@@ -24,20 +25,26 @@ func NewPrometheusPublisher(host string, port int, job string) *PrometheusPublis
 	}
 }
 
-func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64) error {
+func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64,
+	totalLatency, networkLatency, returnLatency time.Duration) error {
 	uri := fmt.Sprintf("http://%s:%d/metrics/job/%s", p.host, p.port, p.job)
 
 	var metrics string
-	loc, _ := time.LoadLocation("Asia/Shanghai")
 	switch r := result.(type) {
 	case model.TCPProbeResult:
 		metrics = fmt.Sprintf(
 			"tcp_rtt{ip=\"%s\", port=\"%s\"} %f\n"+
 				"tcp_success{ip=\"%s\", port=\"%s\"} %d\n"+
-				"probe_last_seen{ip=\"%s\", port=\"%s\"} %d\n",
+				"probe_last_seen{ip=\"%s\", port=\"%s\"} %d\n"+
+				"probe_latency_total{ip=\"%s\", port=\"%s\"} %f\n"+
+				"probe_latency_network{ip=\"%s\", port=\"%s\"} %f\n"+
+				"probe_latency_return{ip=\"%s\", port=\"%s\"} %f\n",
 			r.IP, r.Port, r.RTT.Seconds()*1000,
 			r.IP, r.Port, boolToInt(r.Success),
-			r.IP, r.Port, time.Now().In(loc).Unix(),
+			r.IP, r.Port, timeutil.NowUTC8().Unix(),
+			r.IP, r.Port, totalLatency.Seconds()*1000,
+			r.IP, r.Port, networkLatency.Seconds()*1000,
+			r.IP, r.Port, returnLatency.Seconds()*1000,
 		)
 	case model.ICMPProbeResult: // ICMP
 		metrics = fmt.Sprintf(
@@ -45,12 +52,18 @@ func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64) error 
 				"icmp_rtt_min{ip=\"%s\"} %f\n"+
 				"icmp_rtt_max{ip=\"%s\"} %f\n"+
 				"icmp_rtt_avg{ip=\"%s\"} %f\n"+
-				"probe_last_seen{ip=\"%s\"} %d\n",
+				"probe_last_seen{ip=\"%s\"} %d\n"+
+				"probe_latency_total{ip=\"%s\"} %f\n"+
+				"probe_latency_network{ip=\"%s\"} %f\n"+
+				"probe_latency_return{ip=\"%s\"} %f\n",
 			r.IP, r.PacketLoss,
 			r.IP, float64(r.MinRTT.Microseconds())/1000.0,
 			r.IP, float64(r.MaxRTT.Microseconds())/1000.0,
 			r.IP, float64(r.AvgRTT.Microseconds())/1000.0,
-			r.IP, time.Now().In(loc).Unix(),
+			r.IP, timeutil.NowUTC8().Unix(),
+			r.IP, totalLatency.Seconds()*1000,
+			r.IP, networkLatency.Seconds()*1000,
+			r.IP, returnLatency.Seconds()*1000,
 		)
 	default:
 		return fmt.Errorf("unsupported result type: %T", r)

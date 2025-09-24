@@ -7,6 +7,7 @@ import (
 	"log"
 	"my_project/pkg/model"
 	"my_project/pkg/mq"
+	"my_project/pkg/utils/timeutil"
 	"my_project/server/internal/adapter/metrics"
 	"my_project/server/internal/dao"
 	"net"
@@ -65,8 +66,8 @@ func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 			IP:        req.IP,
 			Port:      req.Port,
 			Timeout:   req.Timeout,
-			CreatedAt: nowCN(),
-			UpdatedAt: nowCN(),
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
 		}
 
 		if err := s.IssueTCPOnce(task); err != nil {
@@ -81,7 +82,7 @@ func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 			s.scheduler.AddTCPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
 				_ = s.IssueTCPOnce(model.TCPProbeTask{
 					IP: req.IP, Port: req.Port, Timeout: req.Timeout,
-					CreatedAt: nowCN(), UpdatedAt: nowCN(),
+					CreatedAt: timeutil.NowUTC8(), UpdatedAt: timeutil.NowUTC8(),
 				})
 			})
 		}
@@ -108,8 +109,8 @@ func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 			Count:     req.Count,
 			Threshold: req.Threshold,
 			Timeout:   req.Timeout,
-			CreatedAt: nowCN(),
-			UpdatedAt: nowCN(),
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
 		}
 
 		if err := s.IssueICMPOnce(task); err != nil {
@@ -126,8 +127,8 @@ func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 					Count:     req.Count,
 					Threshold: req.Threshold,
 					Timeout:   req.Timeout,
-					CreatedAt: nowCN(),
-					UpdatedAt: nowCN(),
+					CreatedAt: timeutil.NowUTC8(),
+					UpdatedAt: timeutil.NowUTC8(),
 				})
 			})
 		}
@@ -149,11 +150,6 @@ func (s *TaskService) IssueICMPOnce(task model.ICMPProbeTask) error {
 	}
 	pub := s.icmpTaskPublisherFactory.CreatePublisher()
 	return pub.Publish(task)
-}
-
-func nowCN() time.Time {
-	loc, _ := time.LoadLocation("Asia/Singapore")
-	return time.Now().In(loc)
 }
 
 // consumeLoop 通用处理消息循环
@@ -179,7 +175,16 @@ func (s *TaskService) ConsumeTCPResults() {
 		if err := json.Unmarshal(body, &result); err != nil {
 			return fmt.Errorf("unmarshal tcp result failed: %w", err)
 		}
+
+		// server 收到结果时间
+		end := timeutil.NowUTC8()
+		totalLatency := end.Sub(result.TaskTime)
+		networkLatency := result.Timestamp.Sub(result.TaskTime)
+		returnLatency := end.Sub(result.Timestamp)
+
 		log.Printf("Processed TCP probe result: %+v", result)
+		log.Printf("[TCP Latency] total=%v, network=%v, return=%v",
+			totalLatency, networkLatency, returnLatency)
 
 		ts := result.Timestamp.Unix()
 		if err := dao.StoreTCPResult(
@@ -189,7 +194,7 @@ func (s *TaskService) ConsumeTCPResults() {
 			float64(result.RTT.Microseconds()), result.Success); err != nil {
 			return fmt.Errorf("store tcp result failed: %w", err)
 		}
-		return s.metricsPublisher.PublishMetrics(result, ts)
+		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency, networkLatency, returnLatency)
 	})
 }
 
@@ -200,7 +205,16 @@ func (s *TaskService) ConsumeICMPResults() {
 		if err := json.Unmarshal(body, &result); err != nil {
 			return fmt.Errorf("unmarshal icmp result failed: %w", err)
 		}
+
+		// server 收到结果时间
+		end := timeutil.NowUTC8()
+		totalLatency := end.Sub(result.TaskTime)
+		networkLatency := result.Timestamp.Sub(result.TaskTime)
+		returnLatency := end.Sub(result.Timestamp)
+
 		log.Printf("Processed ICMP probe result: %+v", result)
+		log.Printf("[ICMP Latency] total=%v, network=%v, return=%v",
+			totalLatency, networkLatency, returnLatency)
 
 		ts := result.Timestamp.Unix()
 		if err := dao.StoreClickHouse(
@@ -214,7 +228,7 @@ func (s *TaskService) ConsumeICMPResults() {
 			return fmt.Errorf("store icmp result failed: %w", err)
 		}
 		log.Printf("Peporting to Prometheus: %f", result.PacketLoss)
-		return s.metricsPublisher.PublishMetrics(result, ts)
+		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency, networkLatency, returnLatency)
 	})
 }
 

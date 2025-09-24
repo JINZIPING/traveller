@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"my_project/pkg/model"
+	"my_project/pkg/utils/timeutil"
 	"net"
 	"time"
 
@@ -15,13 +16,14 @@ func icmpProbeFailure(task *model.ICMPProbeTask, reason string) *model.ICMPProbe
 	log.Printf("ICMP probe failed: ip=%s, reason=%s", task.IP, reason)
 	return &model.ICMPProbeResult{
 		IP:         task.IP,
-		Timestamp:  time.Now(),
 		PacketLoss: 100.0, // 失败时认为完全丢包
 		MinRTT:     0,
 		MaxRTT:     0,
 		AvgRTT:     0,
 		Threshold:  task.Threshold,
 		Success:    false,
+		Timestamp:  timeutil.NowUTC8(),
+		TaskTime:   task.CreatedAt,
 	}
 }
 
@@ -29,6 +31,14 @@ func ExecuteICMPProbeTask(task *model.ICMPProbeTask) *model.ICMPProbeResult {
 	// 校验 IP
 	if net.ParseIP(task.IP) == nil {
 		return icmpProbeFailure(task, "invalid IP address")
+	}
+
+	if task.Count <= 0 {
+		return icmpProbeFailure(task, "invalid count")
+	}
+
+	if task.Timeout <= 0 {
+		return icmpProbeFailure(task, "invalid timeout")
 	}
 
 	pinger, err := probing.NewPinger(task.IP)
@@ -62,13 +72,14 @@ func ExecuteICMPProbeTask(task *model.ICMPProbeTask) *model.ICMPProbeResult {
 	// 创建 ProbeResult 结构体并返回
 	result := &model.ICMPProbeResult{
 		IP:         task.IP,
-		Timestamp:  time.Now(),
 		PacketLoss: packetLoss,
 		MinRTT:     minRTT,
 		MaxRTT:     maxRTT,
 		AvgRTT:     avgRTT,
 		Threshold:  task.Threshold,
 		Success:    packetLoss <= float64(task.Threshold),
+		Timestamp:  timeutil.NowUTC8(),
+		TaskTime:   task.CreatedAt,
 	}
 
 	return result

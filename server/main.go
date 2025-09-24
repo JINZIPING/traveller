@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"my_project/pkg/model"
+	"my_project/pkg/utils/timeutil"
 	"my_project/server/config"
 	"my_project/server/internal/adapter/metrics"
 	"my_project/server/internal/infra"
@@ -81,8 +82,8 @@ func main() {
 			IP:        "1.1.1.1",
 			Port:      "80",
 			Timeout:   5,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
 		})
 	})
 
@@ -93,8 +94,8 @@ func main() {
 			Count:     4,
 			Threshold: 20,
 			Timeout:   5,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
 		})
 	})
 
