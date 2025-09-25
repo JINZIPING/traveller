@@ -14,7 +14,7 @@ var MySQLDB *sql.DB
 
 // InitMySQL 初始化 MySQL 连接 & 表结构
 func InitMySQL() *sql.DB {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		viper.GetString("mysql.user"),
 		viper.GetString("mysql.password"),
 		viper.GetString("mysql.host"),
