@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
-	"my_project/pkg/model"
 	"my_project/pkg/utils/timeutil"
 	"my_project/server/config"
 	"my_project/server/internal/adapter/metrics"
 	"my_project/server/internal/infra"
+	"my_project/server/internal/model"
 	"my_project/server/internal/router"
 	"my_project/server/internal/service"
 	"time"
@@ -25,9 +25,15 @@ func main() {
 	infra.InitLog()
 
 	// 3. 初始化数据库
-	mysqlDB := infra.InitMySQL()
+	db := infra.InitMySQL()
+	if err := db.AutoMigrate(
+		&model.ICMPProbeTask{},
+		&model.TCPProbeTask{},
+	); err != nil {
+		log.Fatalf("AutoMigrate failed: %v", err)
+	}
+
 	clickhouseDB := infra.InitClickHouse()
-	defer mysqlDB.Close()
 	defer clickhouseDB.Close()
 
 	// 4. 初始化 RabbitMQ

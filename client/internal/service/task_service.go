@@ -67,7 +67,7 @@ func (s *ClientService) consumeLoop(factory mq.ConsumerFactory, maxConcurrency i
 // ConsumeTCPTasks 任务消费逻辑
 func (s *ClientService) ConsumeTCPTasks() {
 	s.consumeLoop(s.tcpTaskFactory, s.maxConcurrencyTCP, func(body []byte) error {
-		var task model.TCPProbeTask
+		var task model.TCPProbeTaskDTO
 		if err := json.Unmarshal(body, &task); err != nil {
 			log.Printf("Failed to unmarshal TCP task: %v", err)
 			return err
@@ -89,7 +89,7 @@ func (s *ClientService) ConsumeTCPTasks() {
 // ConsumeICMPTasks 任务消费逻辑
 func (s *ClientService) ConsumeICMPTasks() {
 	s.consumeLoop(s.icmpTaskFactory, s.maxConcurrencyICMP, func(body []byte) error {
-		var task model.ICMPProbeTask
+		var task model.ICMPProbeTaskDTO
 		if err := json.Unmarshal(body, &task); err != nil {
 			log.Printf("Failed to unmarshal ICMP task: %v", err)
 			return err

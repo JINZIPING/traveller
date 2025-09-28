@@ -25,12 +25,13 @@ func TestICMPProbeTaskDAO(t *testing.T) {
 	initTestConfig(t)
 
 	db := infra.InitMySQL()
-	defer db.Close()
+	sqlDB, _ := db.DB()
+	defer sqlDB.Close()
 
 	testIP := "8.8.8.8"
 
 	t.Run("Insert ICMP task", func(t *testing.T) {
-		task := &model.ICMPProbeTask{
+		task := &model.ICMPProbeTaskDTO{
 			IP:        testIP,
 			Count:     4,
 			Threshold: 100,
@@ -65,8 +66,7 @@ func TestICMPProbeTaskDAO(t *testing.T) {
 
 		// Verify the task is gone
 		got, err := dao.GetICMPProbeTaskByIP(testIP)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, got, "expected task to be deleted, but found one")
 	})
-
 }

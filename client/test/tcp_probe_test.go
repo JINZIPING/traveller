@@ -14,7 +14,7 @@ import (
 func TestExecuteTCPProbeTask(t *testing.T) {
 	// Invalid IP
 	t.Run("invalid ip", func(t *testing.T) {
-		task := &model.TCPProbeTask{
+		task := &model.TCPProbeTaskDTO{
 			IP:        "999.999.999.999",
 			Port:      "9999",
 			Timeout:   1,
@@ -26,7 +26,7 @@ func TestExecuteTCPProbeTask(t *testing.T) {
 
 	// Invalid Port
 	t.Run("invalid port", func(t *testing.T) {
-		task := &model.TCPProbeTask{
+		task := &model.TCPProbeTaskDTO{
 			IP:        "127.0.0.1",
 			Port:      "abc",
 			Timeout:   1,
@@ -37,7 +37,7 @@ func TestExecuteTCPProbeTask(t *testing.T) {
 	})
 
 	t.Run("timeout zero", func(t *testing.T) {
-		task := &model.TCPProbeTask{
+		task := &model.TCPProbeTaskDTO{
 			IP:        "127.0.0.1",
 			Port:      "80",
 			Timeout:   0,
@@ -49,7 +49,7 @@ func TestExecuteTCPProbeTask(t *testing.T) {
 
 	// close port
 	t.Run("closed port", func(t *testing.T) {
-		task := &model.TCPProbeTask{
+		task := &model.TCPProbeTaskDTO{
 			IP:        "127.0.0.1",
 			Port:      "65000",
 			Timeout:   1,
@@ -76,7 +76,7 @@ func TestExecuteTCPProbeTask(t *testing.T) {
 			}
 		}()
 
-		task := &model.TCPProbeTask{
+		task := &model.TCPProbeTaskDTO{
 			IP:        "127.0.0.1",
 			Port:      port,
 			Timeout:   2,

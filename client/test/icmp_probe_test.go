@@ -12,7 +12,7 @@ import (
 
 func TestExecuteICMPProbeTask(t *testing.T) {
 	t.Run("invalid ip", func(t *testing.T) {
-		task := &model.ICMPProbeTask{
+		task := &model.ICMPProbeTaskDTO{
 			IP:        "999.999.999.999",
 			Count:     1,
 			Timeout:   1,
@@ -25,7 +25,7 @@ func TestExecuteICMPProbeTask(t *testing.T) {
 	})
 
 	t.Run("loopback", func(t *testing.T) {
-		task := &model.ICMPProbeTask{
+		task := &model.ICMPProbeTaskDTO{
 			IP:        "1.1.1.1",
 			Count:     1,
 			Timeout:   2,
@@ -43,7 +43,7 @@ func TestExecuteICMPProbeTask(t *testing.T) {
 	})
 
 	t.Run("icmp count zero", func(t *testing.T) {
-		task := &model.ICMPProbeTask{
+		task := &model.ICMPProbeTaskDTO{
 			IP:        "1.1.1.1",
 			Count:     1,
 			Timeout:   0,
