@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	pkgModel "my_project/pkg/model"
 	"my_project/pkg/utils/timeutil"
 	"my_project/server/config"
 	"my_project/server/internal/adapter/metrics"
@@ -84,7 +85,7 @@ func main() {
 
 	// 7. 启动时挂一个示例定时任务（每 2 秒下发一次 TCP 探测）
 	taskService.Scheduler().AddTCPJob("bootstrap:tcp:1.1.1.1:80", 2*time.Second, func() {
-		_ = taskService.IssueTCPOnce(model.TCPProbeTask{
+		_ = taskService.IssueTCPOnce(&pkgModel.TCPProbeTaskDTO{
 			IP:        "1.1.1.1",
 			Port:      "80",
 			Timeout:   5,
@@ -94,8 +95,8 @@ func main() {
 	})
 
 	// 8. 启动时挂一个示例 ICMP 定时任务（每 30 秒探测一次 8.8.8.8）
-	taskService.Scheduler().AddICMPJob("bootstrap:icmp:8.8.8.8", 2*time.Second, func() {
-		_ = taskService.IssueICMPOnce(model.ICMPProbeTask{
+	taskService.Scheduler().AddICMPJob("bootstrap:icmp:8.8.8.8", 30*time.Second, func() {
+		_ = taskService.IssueICMPOnce(&pkgModel.ICMPProbeTaskDTO{
 			IP:        "8.8.8.8",
 			Count:     4,
 			Threshold: 20,

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"my_project/pkg/model"
+	pkgModel "my_project/pkg/model"
 	"my_project/pkg/utils/timeutil"
 	"net/http"
 	"time"
@@ -31,7 +31,7 @@ func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64,
 
 	var metrics string
 	switch r := result.(type) {
-	case model.TCPProbeResult:
+	case pkgModel.TCPProbeResultDTO:
 		metrics = fmt.Sprintf(
 			"tcp_rtt{ip=\"%s\", port=\"%s\"} %f\n"+
 				"tcp_success{ip=\"%s\", port=\"%s\"} %d\n"+
@@ -46,7 +46,7 @@ func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64,
 			r.IP, r.Port, networkLatency.Seconds()*1000,
 			r.IP, r.Port, returnLatency.Seconds()*1000,
 		)
-	case model.ICMPProbeResult: // ICMP
+	case pkgModel.ICMPProbeResultDTO: // ICMP
 		metrics = fmt.Sprintf(
 			"icmp_packet_loss{ip=\"%s\"} %f\n"+
 				"icmp_rtt_min{ip=\"%s\"} %f\n"+

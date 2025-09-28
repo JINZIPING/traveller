@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"my_project/pkg/model"
+	pkgModel "my_project/pkg/model"
 	"my_project/pkg/mq"
 	"my_project/pkg/utils/timeutil"
 	"my_project/server/internal/adapter/metrics"
@@ -62,7 +62,7 @@ func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 			return
 		}
 
-		task := model.TCPProbeTask{
+		task := &pkgModel.TCPProbeTaskDTO{
 			IP:        req.IP,
 			Port:      req.Port,
 			Timeout:   req.Timeout,
@@ -80,7 +80,7 @@ func (s *TaskService) HandleTCPTask() app.HandlerFunc {
 		if req.IntervalSec > 0 {
 			jobID := "tcp:" + req.IP + ":" + req.Port
 			s.scheduler.AddTCPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
-				_ = s.IssueTCPOnce(model.TCPProbeTask{
+				_ = s.IssueTCPOnce(&pkgModel.TCPProbeTaskDTO{
 					IP: req.IP, Port: req.Port, Timeout: req.Timeout,
 					CreatedAt: timeutil.NowUTC8(), UpdatedAt: timeutil.NowUTC8(),
 				})
@@ -104,7 +104,7 @@ func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 			return
 		}
 
-		task := model.ICMPProbeTask{
+		task := &pkgModel.ICMPProbeTaskDTO{
 			IP:        req.IP,
 			Count:     req.Count,
 			Threshold: req.Threshold,
@@ -122,7 +122,7 @@ func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 		if req.IntervalSec > 0 {
 			jobID := "icmp:" + req.IP
 			s.scheduler.AddICMPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
-				_ = s.IssueICMPOnce(model.ICMPProbeTask{
+				_ = s.IssueICMPOnce(&pkgModel.ICMPProbeTaskDTO{
 					IP:        req.IP,
 					Count:     req.Count,
 					Threshold: req.Threshold,
@@ -136,16 +136,16 @@ func (s *TaskService) HandleICMPTask() app.HandlerFunc {
 	}
 }
 
-func (s *TaskService) IssueTCPOnce(task model.TCPProbeTask) error {
-	if err := dao.StoreTCPProbeTask(&task); err != nil {
+func (s *TaskService) IssueTCPOnce(task *pkgModel.TCPProbeTaskDTO) error {
+	if err := dao.StoreTCPProbeTask(task); err != nil {
 		return err
 	}
 	pub := s.tcpTaskPublisherFactory.CreatePublisher()
 	return pub.Publish(task)
 }
 
-func (s *TaskService) IssueICMPOnce(task model.ICMPProbeTask) error {
-	if err := dao.StoreICMPProbeTask(&task); err != nil {
+func (s *TaskService) IssueICMPOnce(task *pkgModel.ICMPProbeTaskDTO) error {
+	if err := dao.StoreICMPProbeTask(task); err != nil {
 		return err
 	}
 	pub := s.icmpTaskPublisherFactory.CreatePublisher()
@@ -171,7 +171,7 @@ func (s *TaskService) consumeLoop(factory mq.ConsumerFactory, processor func([]b
 // ConsumeTCPResults TCP消费逻辑
 func (s *TaskService) ConsumeTCPResults() {
 	s.consumeLoop(s.tcpResultConsumerFactory, func(body []byte) error {
-		var result model.TCPProbeResult
+		var result pkgModel.TCPProbeResultDTO
 		if err := json.Unmarshal(body, &result); err != nil {
 			return fmt.Errorf("unmarshal tcp result failed: %w", err)
 		}
@@ -201,7 +201,7 @@ func (s *TaskService) ConsumeTCPResults() {
 // ConsumeICMPResults ICMP消费逻辑
 func (s *TaskService) ConsumeICMPResults() {
 	s.consumeLoop(s.icmpResultConsumerFactory, func(body []byte) error {
-		var result model.ICMPProbeResult
+		var result pkgModel.ICMPProbeResultDTO
 		if err := json.Unmarshal(body, &result); err != nil {
 			return fmt.Errorf("unmarshal icmp result failed: %w", err)
 		}
