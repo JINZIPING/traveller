@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	pkgModel "my_project/pkg/model"
 	"my_project/pkg/utils/timeutil"
@@ -83,9 +84,9 @@ func main() {
 		metricsPublisher,
 	)
 
-	// 7. 启动时挂一个示例定时任务（每 2 秒下发一次 TCP 探测）
-	taskService.Scheduler().AddTCPJob("bootstrap:tcp:1.1.1.1:80", 2*time.Second, func() {
-		_ = taskService.IssueTCPOnce(&pkgModel.TCPProbeTaskDTO{
+	// 7. 启动时挂一个示例定时任务（每 5 秒下发一次 TCP 探测）
+	taskService.Scheduler().AddTCPJob("bootstrap:tcp:1.1.1.1:80", 5*time.Second, func() {
+		_ = taskService.IssueTCPOnce(context.Background(), &pkgModel.TCPProbeTaskDTO{
 			IP:        "1.1.1.1",
 			Port:      "80",
 			Timeout:   5,
@@ -94,9 +95,9 @@ func main() {
 		})
 	})
 
-	// 8. 启动时挂一个示例 ICMP 定时任务（每 30 秒探测一次 8.8.8.8）
-	taskService.Scheduler().AddICMPJob("bootstrap:icmp:8.8.8.8", 30*time.Second, func() {
-		_ = taskService.IssueICMPOnce(&pkgModel.ICMPProbeTaskDTO{
+	// 8. 启动时挂一个示例 ICMP 定时任务（每 5 秒探测一次 8.8.8.8）
+	taskService.Scheduler().AddICMPJob("bootstrap:icmp:8.8.8.8", 5*time.Second, func() {
+		_ = taskService.IssueICMPOnce(context.Background(), &pkgModel.ICMPProbeTaskDTO{
 			IP:        "8.8.8.8",
 			Count:     4,
 			Threshold: 20,

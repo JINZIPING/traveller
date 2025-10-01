@@ -16,29 +16,29 @@ func InitRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
 	var err error
 
 	rabbitmqURL := viper.GetString("rabbitmq.url")
-	log.Printf("Initializing RabbitMQ connection with URL: %s", rabbitmqURL)
+	log.Printf("[INIT]: Initializing RabbitMQ connection with URL: %s", rabbitmqURL)
 
 	// 尝试重连
 	for i := 0; i < 10; i++ {
-		log.Printf("Attempt %d: Connecting to RabbitMQ...", i+1)
+		log.Printf("[INFO]: Attempt %d: Connecting to RabbitMQ...", i+1)
 
 		conn, err = amqp.Dial(rabbitmqURL)
 		if err != nil {
-			log.Printf("Failed to connect to RabbitMQ: %v, retrying in 10 seconds...", err)
+			log.Printf("[ERROR RabbitMQ]: Failed to connect to RabbitMQ: %v, retrying in 10 seconds...", err)
 			time.Sleep(10 * time.Second)
 			continue
 		}
 
-		log.Println("Successfully connected to RabbitMQ, creating channel...")
+		log.Println("[INIT]: Successfully connected to RabbitMQ, creating channel...")
 		ch, err = conn.Channel()
 		if err != nil {
-			log.Printf("Failed to create RabbitMQ channel: %v, retrying in 5 seconds...", err)
+			log.Printf("[ERROR RabbitMQ]: Failed to create RabbitMQ channel: %v, retrying in 5 seconds...", err)
 			conn.Close()
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		log.Println("Successfully connected to RabbitMQ and created channel")
+		log.Println("[INIT]: Successfully connected to RabbitMQ and created channel")
 
 		// 声明交换机
 		if err := ch.ExchangeDeclare(
@@ -50,7 +50,7 @@ func InitRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
 			false, // 不阻塞
 			nil,
 		); err != nil {
-			log.Printf("Failed to declare exchange: %v", err)
+			log.Printf("[ERROR RabbitMQ]: Failed to declare exchange: %v", err)
 			ch.Close()
 			conn.Close()
 			time.Sleep(5 * time.Second)
@@ -67,22 +67,22 @@ func InitRabbitMQ() (*amqp.Connection, *amqp.Channel, error) {
 
 		for _, q := range queues {
 			if _, err := ch.QueueDeclare(q, true, false, false, false, nil); err != nil {
-				log.Printf("Failed to declare queue %s: %v", q, err)
+				log.Printf("[ERROR RabbitMQ]: Failed to declare queue %s: %v", q, err)
 				ch.Close()
 				conn.Close()
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			log.Printf("Successfully declared queue: %s", q)
+			log.Printf("[INIT]: Successfully declared queue: %s", q)
 		}
 
 		return conn, ch, nil
 	}
 
 	if conn != nil {
-		log.Println("Closing RabbitMQ connection due to repeated failures")
+		log.Println("[ERROR RabbitMQ]: Closing RabbitMQ connection due to repeated failures")
 		conn.Close()
 	}
 
-	return nil, nil, fmt.Errorf("failed to connect to RabbitMQ after multiple attempts: %v", err)
+	return nil, nil, fmt.Errorf("[ERROR RabbitMQ]: Failed to connect to RabbitMQ after multiple attempts: %v", err)
 }

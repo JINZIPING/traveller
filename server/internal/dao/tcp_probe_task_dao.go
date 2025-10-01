@@ -12,6 +12,7 @@ import (
 func StoreTCPProbeTask(dto *pkgModel.TCPProbeTaskDTO) error {
 	task := &dbModel.TCPProbeTask{
 		IP:        dto.IP,
+		TaskID:    dto.TaskID,
 		Port:      dto.Port,
 		Timeout:   dto.Timeout,
 		Status:    "pending",

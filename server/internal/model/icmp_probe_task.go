@@ -4,6 +4,7 @@ import "time"
 
 type ICMPProbeTask struct {
 	ID        int64  `gorm:"primaryKey;autoIncrement"`
+	TaskID    string `gorm:"type:varchar(64);uniqueIndex;"`
 	IP        string `gorm:"type:varchar(255);not null"`
 	Count     int    `gorm:"not null"`
 	Threshold int    `gorm:"not null"`

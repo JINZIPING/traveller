@@ -12,6 +12,7 @@ import (
 func StoreICMPProbeTask(dto *pkgModel.ICMPProbeTaskDTO) error {
 	task := &dbModel.ICMPProbeTask{
 		IP:        dto.IP,
+		TaskID:    dto.TaskID,
 		Count:     dto.Count,
 		Threshold: dto.Threshold,
 		Timeout:   dto.Timeout,

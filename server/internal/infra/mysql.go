@@ -32,15 +32,15 @@ func InitMySQL() *gorm.DB {
 			sqlDB.SetMaxOpenConns(50)
 			sqlDB.SetMaxIdleConns(10)
 			sqlDB.SetConnMaxLifetime(5 * time.Minute)
-			log.Println("MySQL initialized successfully (GORM)")
+			log.Println("[INIT]: MySQL initialized successfully (GORM)")
 			break
 		}
-		log.Printf("Failed to connect to MySQL (attempt %d): %v", i+1, err)
+		log.Printf("[ERROR MySQL]: Failed to connect to MySQL (attempt %d): %v", i+1, err)
 		time.Sleep(2 * time.Second)
 	}
 
 	if err != nil {
-		log.Fatalf("Could not establish connection to MySQL after retries: %v", err)
+		log.Fatalf("[ERROR MySQL]: Could not establish connection to MySQL after retries: %v", err)
 	}
 
 	return MySQLDB

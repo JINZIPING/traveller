@@ -6,6 +6,7 @@ import (
 
 // TCPProbeTaskDTO TCP探测任务
 type TCPProbeTaskDTO struct {
+	TaskID    string    `json:"task_id"`
 	IP        string    `json:"ip"`
 	Port      string    `json:"port"`
 	Timeout   int       `json:"timeout"`
@@ -15,10 +16,9 @@ type TCPProbeTaskDTO struct {
 
 // TCPProbeResultDTO TCP探测结果
 type TCPProbeResultDTO struct {
-	IP        string        `json:"ip"`
-	Port      string        `json:"port"`
-	Success   bool          `json:"success"`
-	RTT       time.Duration `json:"rtt"`
-	Timestamp time.Time     `json:"timestamp"`
-	TaskTime  time.Time     `json:"task_time"`
+	TaskID  string        `json:"task_id"`
+	IP      string        `json:"ip"`
+	Port    string        `json:"port"`
+	Success bool          `json:"success"`
+	RTT     time.Duration `json:"rtt"`
 }

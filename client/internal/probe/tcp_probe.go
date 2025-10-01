@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"my_project/pkg/model"
-	"my_project/pkg/utils/timeutil"
 	"net"
 	"strconv"
 	"time"
@@ -14,12 +13,10 @@ import (
 func tcpProbeFailure(task *model.TCPProbeTaskDTO, reason string) *model.TCPProbeResultDTO {
 	log.Printf("TCP probe failed: ip=%s, port=%s, reason=%s", task.IP, task.Port, reason)
 	return &model.TCPProbeResultDTO{
-		IP:        task.IP,
-		Port:      task.Port,
-		Success:   false,
-		RTT:       0,
-		Timestamp: timeutil.NowUTC8(),
-		TaskTime:  task.CreatedAt,
+		IP:      task.IP,
+		Port:    task.Port,
+		Success: false,
+		RTT:     0,
 	}
 }
 
@@ -28,10 +25,6 @@ func ExecuteTCPProbeTask(task *model.TCPProbeTaskDTO) *model.TCPProbeResultDTO {
 	// 校验 IP
 	if net.ParseIP(task.IP) == nil {
 		return tcpProbeFailure(task, "invalid IP address")
-	}
-
-	if task.Timeout <= 0 {
-		return tcpProbeFailure(task, "invalid timeout")
 	}
 
 	// 校验端口
@@ -54,11 +47,9 @@ func ExecuteTCPProbeTask(task *model.TCPProbeTaskDTO) *model.TCPProbeResultDTO {
 	log.Printf("TCP probe success: %s, RTT=%v", address, rtt)
 
 	return &model.TCPProbeResultDTO{
-		IP:        task.IP,
-		Port:      task.Port,
-		Timestamp: timeutil.NowUTC8(),
-		TaskTime:  task.CreatedAt,
-		RTT:       rtt,
-		Success:   true,
+		IP:      task.IP,
+		Port:    task.Port,
+		RTT:     rtt,
+		Success: true,
 	}
 }

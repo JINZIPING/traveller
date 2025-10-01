@@ -75,6 +75,7 @@ func (s *ClientService) ConsumeTCPTasks() {
 
 		// 执行探测
 		result := probe.ExecuteTCPProbeTask(&task)
+		result.TaskID = task.TaskID
 
 		// 上报结果
 		pub := s.tcpResultFactory.CreatePublisher()
@@ -97,6 +98,7 @@ func (s *ClientService) ConsumeICMPTasks() {
 
 		// 执行探测
 		result := probe.ExecuteICMPProbeTask(&task)
+		result.TaskID = task.TaskID
 
 		// 上报结果
 		pub := s.icmpResultFactory.CreatePublisher()

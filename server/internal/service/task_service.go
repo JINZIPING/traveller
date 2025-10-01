@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"my_project/pkg/mark"
 	pkgModel "my_project/pkg/model"
 	"my_project/pkg/mq"
 	"my_project/pkg/utils/timeutil"
 	"my_project/server/internal/adapter/metrics"
 	"my_project/server/internal/dao"
-	"net"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/google/uuid"
 )
 
 // TaskService 负责任务下发 结果处理 结果上报
@@ -48,95 +48,104 @@ func (s *TaskService) Scheduler() *Scheduler {
 	return s.scheduler
 }
 
-// HandleTCPTask 下发TCP探测任务
-func (s *TaskService) HandleTCPTask() app.HandlerFunc {
-	return func(ctx context.Context, c *app.RequestContext) {
-		var req dao.TCPProbeTaskReq
-		if err := c.BindAndValidate(&req); err != nil {
-			c.String(400, "invalid request: %v", err)
-			return
-		}
+//// HandleTCPTask 下发TCP探测任务
+//func (s *TaskService) HandleTCPTask() app.HandlerFunc {
+//	return func(ctx context.Context, c *app.RequestContext) {
+//		var req dao.TCPProbeTaskReq
+//		if err := c.BindAndValidate(&req); err != nil {
+//			c.String(400, "invalid request: %v", err)
+//			return
+//		}
+//
+//		if net.ParseIP(req.IP) == nil {
+//			c.String(400, "invalid ip")
+//			return
+//		}
+//
+//		task := &pkgModel.TCPProbeTaskDTO{
+//			IP:        req.IP,
+//			Port:      req.Port,
+//			Timeout:   req.Timeout,
+//			CreatedAt: timeutil.NowUTC8(),
+//			UpdatedAt: timeutil.NowUTC8(),
+//		}
+//
+//		if err := s.IssueTCPOnce(ctx, task); err != nil {
+//			log.Printf("publish TCP task error: %v", err)
+//			c.String(500, "publish error")
+//			return
+//		}
+//
+//		// 注册定时任务
+//		//if req.IntervalSec > 0 {
+//		//	jobID := "tcp:" + req.IP + ":" + req.Port
+//		//	s.scheduler.AddTCPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
+//		//		_ = s.IssueTCPOnce(ctx, &pkgModel.TCPProbeTaskDTO{
+//		//			IP: req.IP, Port: req.Port, Timeout: req.Timeout,
+//		//			CreatedAt: timeutil.NowUTC8(), UpdatedAt: timeutil.NowUTC8(),
+//		//		})
+//		//	})
+//		//}
+//		c.String(200, "tcp task accepted")
+//	}
+//}
+//
+//// HandleICMPTask 下发ICMP探测任务
+//func (s *TaskService) HandleICMPTask() app.HandlerFunc {
+//	return func(ctx context.Context, c *app.RequestContext) {
+//		var req dao.ICMPProbeTaskReq
+//		if err := c.BindAndValidate(&req); err != nil {
+//			c.String(400, "invalid request: %v", err)
+//			return
+//		}
+//
+//		if net.ParseIP(req.IP) == nil {
+//			c.String(400, "invalid ip")
+//			return
+//		}
+//
+//		task := &pkgModel.ICMPProbeTaskDTO{
+//			IP:        req.IP,
+//			Count:     req.Count,
+//			Threshold: req.Threshold,
+//			Timeout:   req.Timeout,
+//			CreatedAt: timeutil.NowUTC8(),
+//			UpdatedAt: timeutil.NowUTC8(),
+//		}
+//
+//		if err := s.IssueICMPOnce(ctx, task); err != nil {
+//			log.Printf("publish ICMP task error: %v", err)
+//			c.String(500, "publish error")
+//			return
+//		}
+//
+//		//if req.IntervalSec > 0 {
+//		//	jobID := "icmp:" + req.IP
+//		//	s.scheduler.AddICMPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
+//		//		_ = s.IssueICMPOnce(&pkgModel.ICMPProbeTaskDTO{
+//		//			IP:        req.IP,
+//		//			Count:     req.Count,
+//		//			Threshold: req.Threshold,
+//		//			Timeout:   req.Timeout,
+//		//			CreatedAt: timeutil.NowUTC8(),
+//		//			UpdatedAt: timeutil.NowUTC8(),
+//		//		})
+//		//	})
+//		//}
+//		c.String(200, "icmp task accepted")
+//	}
+//}
 
-		if net.ParseIP(req.IP) == nil {
-			c.String(400, "invalid ip")
-			return
-		}
-
-		task := &pkgModel.TCPProbeTaskDTO{
-			IP:        req.IP,
-			Port:      req.Port,
-			Timeout:   req.Timeout,
-			CreatedAt: timeutil.NowUTC8(),
-			UpdatedAt: timeutil.NowUTC8(),
-		}
-
-		if err := s.IssueTCPOnce(task); err != nil {
-			log.Printf("publish TCP task error: %v", err)
-			c.String(500, "publish error")
-			return
-		}
-
-		// 注册定时任务
-		if req.IntervalSec > 0 {
-			jobID := "tcp:" + req.IP + ":" + req.Port
-			s.scheduler.AddTCPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
-				_ = s.IssueTCPOnce(&pkgModel.TCPProbeTaskDTO{
-					IP: req.IP, Port: req.Port, Timeout: req.Timeout,
-					CreatedAt: timeutil.NowUTC8(), UpdatedAt: timeutil.NowUTC8(),
-				})
-			})
-		}
-		c.String(200, "tcp task accepted")
+func (s *TaskService) IssueTCPOnce(ctx context.Context, task *pkgModel.TCPProbeTaskDTO) error {
+	if task.TaskID == "" {
+		task.TaskID = uuid.NewString()
 	}
-}
 
-// HandleICMPTask 下发ICMP探测任务
-func (s *TaskService) HandleICMPTask() app.HandlerFunc {
-	return func(ctx context.Context, c *app.RequestContext) {
-		var req dao.ICMPProbeTaskReq
-		if err := c.BindAndValidate(&req); err != nil {
-			c.String(400, "invalid request: %v", err)
-			return
-		}
+	// 在 ctx 上触发埋点（记录开始时间）
+	ctx = mark.Start(ctx, task.TaskID)
 
-		if net.ParseIP(req.IP) == nil {
-			c.String(400, "invalid ip")
-			return
-		}
+	log.Printf("[MARK] Start TaskID=%s", task.TaskID)
 
-		task := &pkgModel.ICMPProbeTaskDTO{
-			IP:        req.IP,
-			Count:     req.Count,
-			Threshold: req.Threshold,
-			Timeout:   req.Timeout,
-			CreatedAt: timeutil.NowUTC8(),
-			UpdatedAt: timeutil.NowUTC8(),
-		}
-
-		if err := s.IssueICMPOnce(task); err != nil {
-			log.Printf("publish ICMP task error: %v", err)
-			c.String(500, "publish error")
-			return
-		}
-
-		if req.IntervalSec > 0 {
-			jobID := "icmp:" + req.IP
-			s.scheduler.AddICMPJob(jobID, time.Duration(req.IntervalSec)*time.Second, func() {
-				_ = s.IssueICMPOnce(&pkgModel.ICMPProbeTaskDTO{
-					IP:        req.IP,
-					Count:     req.Count,
-					Threshold: req.Threshold,
-					Timeout:   req.Timeout,
-					CreatedAt: timeutil.NowUTC8(),
-					UpdatedAt: timeutil.NowUTC8(),
-				})
-			})
-		}
-		c.String(200, "icmp task accepted")
-	}
-}
-
-func (s *TaskService) IssueTCPOnce(task *pkgModel.TCPProbeTaskDTO) error {
 	if err := dao.StoreTCPProbeTask(task); err != nil {
 		return err
 	}
@@ -144,7 +153,13 @@ func (s *TaskService) IssueTCPOnce(task *pkgModel.TCPProbeTaskDTO) error {
 	return pub.Publish(task)
 }
 
-func (s *TaskService) IssueICMPOnce(task *pkgModel.ICMPProbeTaskDTO) error {
+func (s *TaskService) IssueICMPOnce(ctx context.Context, task *pkgModel.ICMPProbeTaskDTO) error {
+	if task.TaskID == "" {
+		task.TaskID = uuid.NewString()
+	}
+	// 记录开始时间
+	ctx = mark.Start(ctx, task.TaskID)
+
 	if err := dao.StoreICMPProbeTask(task); err != nil {
 		return err
 	}
@@ -176,25 +191,24 @@ func (s *TaskService) ConsumeTCPResults() {
 			return fmt.Errorf("unmarshal tcp result failed: %w", err)
 		}
 
-		// server 收到结果时间
-		end := timeutil.NowUTC8()
-		totalLatency := end.Sub(result.TaskTime)
-		networkLatency := result.Timestamp.Sub(result.TaskTime)
-		returnLatency := end.Sub(result.Timestamp)
+		// 用埋点包计算总延时
+		totalLatency, ok := mark.Finish(result.TaskID)
+		if !ok {
+			log.Printf("[WARN] missing start mark for task=%s", result.TaskID)
+		}
 
-		log.Printf("Processed TCP probe result: %+v", result)
-		log.Printf("[TCP Latency] total=%v, network=%v, return=%v",
-			totalLatency, networkLatency, returnLatency)
+		// server 收到结果时间，作为指标时间戳
+		ts := timeutil.NowUTC8().Unix()
 
-		ts := result.Timestamp.Unix()
 		if err := dao.StoreTCPResult(
 			ts,
 			result.IP,
 			result.Port,
 			float64(result.RTT.Microseconds()), result.Success); err != nil {
-			return fmt.Errorf("store tcp result failed: %w", err)
+			return fmt.Errorf("[ERROR] Store tcp result failed: %w", err)
 		}
-		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency, networkLatency, returnLatency)
+		log.Printf("[TCP MARK] Finish TaskID=%s, latency=%v, ok=%v", result.TaskID, totalLatency, ok)
+		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency)
 	})
 }
 
@@ -206,17 +220,14 @@ func (s *TaskService) ConsumeICMPResults() {
 			return fmt.Errorf("unmarshal icmp result failed: %w", err)
 		}
 
-		// server 收到结果时间
-		end := timeutil.NowUTC8()
-		totalLatency := end.Sub(result.TaskTime)
-		networkLatency := result.Timestamp.Sub(result.TaskTime)
-		returnLatency := end.Sub(result.Timestamp)
+		// 用埋点包计算总延时
+		totalLatency, ok := mark.Finish(result.TaskID)
+		if !ok {
+			log.Printf("[WARN] missing start mark for task=%s", result.TaskID)
+		}
 
-		log.Printf("Processed ICMP probe result: %+v", result)
-		log.Printf("[ICMP Latency] total=%v, network=%v, return=%v",
-			totalLatency, networkLatency, returnLatency)
-
-		ts := result.Timestamp.Unix()
+		// server 收到结果时间，作为指标时间戳
+		ts := timeutil.NowUTC8().Unix()
 		if err := dao.StoreClickHouse(
 			ts,
 			result.IP,
@@ -225,10 +236,10 @@ func (s *TaskService) ConsumeICMPResults() {
 			float64(result.MaxRTT.Microseconds()),
 			float64(result.AvgRTT.Microseconds()),
 		); err != nil {
-			return fmt.Errorf("store icmp result failed: %w", err)
+			return fmt.Errorf("[ERROR] Store icmp result failed: %w", err)
 		}
-		log.Printf("Peporting to Prometheus: %f", result.PacketLoss)
-		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency, networkLatency, returnLatency)
+		log.Printf("[ICMP Result] Finish TaskID=%s, latency=%v, ok=%v, Peporting to Prometheus: %f", result.TaskID, totalLatency, ok, result.PacketLoss)
+		return s.metricsPublisher.PublishMetrics(result, ts, totalLatency)
 	})
 }
 
