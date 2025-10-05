@@ -10,19 +10,18 @@ import (
 )
 
 // tcpProbeFailure
-func tcpProbeFailure(task *model.TCPProbeTask, reason string) *model.TCPProbeResult {
+func tcpProbeFailure(task *model.TCPProbeTaskDTO, reason string) *model.TCPProbeResultDTO {
 	log.Printf("TCP probe failed: ip=%s, port=%s, reason=%s", task.IP, task.Port, reason)
-	return &model.TCPProbeResult{
-		IP:        task.IP,
-		Port:      task.Port,
-		Timestamp: time.Now(),
-		Success:   false,
-		RTT:       0,
+	return &model.TCPProbeResultDTO{
+		IP:      task.IP,
+		Port:    task.Port,
+		Success: false,
+		RTT:     0,
 	}
 }
 
 // ExecuteTCPProbeTask 执行 TCP 探测
-func ExecuteTCPProbeTask(task *model.TCPProbeTask) *model.TCPProbeResult {
+func ExecuteTCPProbeTask(task *model.TCPProbeTaskDTO) *model.TCPProbeResultDTO {
 	// 校验 IP
 	if net.ParseIP(task.IP) == nil {
 		return tcpProbeFailure(task, "invalid IP address")
@@ -47,11 +46,10 @@ func ExecuteTCPProbeTask(task *model.TCPProbeTask) *model.TCPProbeResult {
 	rtt := time.Since(start)
 	log.Printf("TCP probe success: %s, RTT=%v", address, rtt)
 
-	return &model.TCPProbeResult{
-		IP:        task.IP,
-		Port:      task.Port,
-		Timestamp: time.Now(),
-		RTT:       rtt,
-		Success:   true,
+	return &model.TCPProbeResultDTO{
+		IP:      task.IP,
+		Port:    task.Port,
+		RTT:     rtt,
+		Success: true,
 	}
 }

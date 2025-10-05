@@ -11,12 +11,11 @@ import (
 )
 
 // icmpProbeFailure 封装失败返回逻辑
-func icmpProbeFailure(task *model.ICMPProbeTask, reason string) *model.ICMPProbeResult {
+func icmpProbeFailure(task *model.ICMPProbeTaskDTO, reason string) *model.ICMPProbeResultDTO {
 	log.Printf("ICMP probe failed: ip=%s, reason=%s", task.IP, reason)
-	return &model.ICMPProbeResult{
+	return &model.ICMPProbeResultDTO{
 		IP:         task.IP,
-		Timestamp:  time.Now(),
-		PacketLoss: 100.0, // 失败时认为完全丢包
+		PacketLoss: -1,
 		MinRTT:     0,
 		MaxRTT:     0,
 		AvgRTT:     0,
@@ -25,7 +24,7 @@ func icmpProbeFailure(task *model.ICMPProbeTask, reason string) *model.ICMPProbe
 	}
 }
 
-func ExecuteICMPProbeTask(task *model.ICMPProbeTask) *model.ICMPProbeResult {
+func ExecuteICMPProbeTask(task *model.ICMPProbeTaskDTO) *model.ICMPProbeResultDTO {
 	// 校验 IP
 	if net.ParseIP(task.IP) == nil {
 		return icmpProbeFailure(task, "invalid IP address")
@@ -60,9 +59,8 @@ func ExecuteICMPProbeTask(task *model.ICMPProbeTask) *model.ICMPProbeResult {
 	pinger.Run()
 
 	// 创建 ProbeResult 结构体并返回
-	result := &model.ICMPProbeResult{
+	result := &model.ICMPProbeResultDTO{
 		IP:         task.IP,
-		Timestamp:  time.Now(),
 		PacketLoss: packetLoss,
 		MinRTT:     minRTT,
 		MaxRTT:     maxRTT,

@@ -42,13 +42,13 @@ func InitConfig() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalf("Error reading config file: %v", err)
+		log.Fatalf("[ERROR]: Error reading config file: %v", err)
 	}
 
 	err = viper.Unmarshal(&ServerConfig)
 	if err != nil {
-		log.Fatalf("Unable to decode into struct: %v", err)
+		log.Fatalf("[ERROR]: Unable to decode into struct: %v", err)
 	}
 
-	log.Println("Config file loaded successfully")
+	log.Println("[INIT]: Config file loaded successfully")
 }

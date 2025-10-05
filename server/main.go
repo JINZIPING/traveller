@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"log"
+	pkgModel "my_project/pkg/model"
+	"my_project/pkg/utils/timeutil"
 	"my_project/server/config"
 	"my_project/server/internal/adapter/metrics"
 	"my_project/server/internal/infra"
+	"my_project/server/internal/model"
 	"my_project/server/internal/router"
 	"my_project/server/internal/service"
+	"time"
 
 	"my_project/pkg/mq/rabbitmq"
 
@@ -22,9 +27,15 @@ func main() {
 	infra.InitLog()
 
 	// 3. 初始化数据库
-	mysqlDB := infra.InitMySQL()
+	db := infra.InitMySQL()
+	if err := db.AutoMigrate(
+		&model.ICMPProbeTask{},
+		&model.TCPProbeTask{},
+	); err != nil {
+		log.Fatalf("AutoMigrate failed: %v", err)
+	}
+
 	clickhouseDB := infra.InitClickHouse()
-	defer mysqlDB.Close()
 	defer clickhouseDB.Close()
 
 	// 4. 初始化 RabbitMQ
@@ -58,13 +69,13 @@ func main() {
 	tcpResultKey := viper.GetString("rabbitmq.tcp_result_routing_key")
 	tcpResultFactory := rabbitmq.NewRabbitMQFactory(ch, exchange, tcpResultQueue, tcpResultKey)
 
-	// 4. 初始化 Prometheus Publisher
+	// 5. 初始化 Prometheus Publisher
 	promHost := viper.GetString("prometheus.host")
 	promPort := viper.GetInt("prometheus.port")
 	promJob := viper.GetString("prometheus.job")
 	metricsPublisher := metrics.NewPrometheusPublisher(promHost, promPort, promJob)
 
-	// 5. 创建 TaskService
+	// 6. 创建 TaskService
 	taskService := service.NewTaskService(
 		tcpTaskFactory,
 		icmpTaskFactory,
@@ -73,10 +84,33 @@ func main() {
 		metricsPublisher,
 	)
 
-	// 6. 初始化 Hertz
+	// 7. 启动时挂一个示例定时任务（每 5 秒下发一次 TCP 探测）
+	taskService.Scheduler().AddTCPJob("bootstrap:tcp:1.1.1.1:80", 5*time.Second, func() {
+		_ = taskService.IssueTCPOnce(context.Background(), &pkgModel.TCPProbeTaskDTO{
+			IP:        "1.1.1.1",
+			Port:      "80",
+			Timeout:   5,
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
+		})
+	})
+
+	// 8. 启动时挂一个示例 ICMP 定时任务（每 5 秒探测一次 8.8.8.8）
+	taskService.Scheduler().AddICMPJob("bootstrap:icmp:8.8.8.8", 5*time.Second, func() {
+		_ = taskService.IssueICMPOnce(context.Background(), &pkgModel.ICMPProbeTaskDTO{
+			IP:        "8.8.8.8",
+			Count:     4,
+			Threshold: 20,
+			Timeout:   5,
+			CreatedAt: timeutil.NowUTC8(),
+			UpdatedAt: timeutil.NowUTC8(),
+		})
+	})
+
+	// 8. 初始化 Hertz
 	h := server.Default(server.WithHostPorts(":8080"))
 
-	// 7. 注册路由
+	// 9. 注册路由
 	router.InitializeRoutes(h, taskService)
 
 	// 消费启动

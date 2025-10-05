@@ -12,7 +12,7 @@ func InitLog() {
 	logFile := viper.GetString("log_file")
 
 	if logFile == "" {
-		log.Println("Log file path is empty, logging to stdout")
+		log.Println("[ERROR LOGGER]: Log file path is empty, logging to stdout")
 		return
 	}
 
@@ -31,10 +31,10 @@ func InitLog() {
 
 	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
+		log.Fatalf("[ERROR LOGGER]: Failed to open log file: %v", err)
 	}
 
 	log.SetOutput(file)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("Log initialized successfully")
+	log.Println("[INIT]: Log initialized successfully")
 }

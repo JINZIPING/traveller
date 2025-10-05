@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"my_project/pkg/model"
+	pkgModel "my_project/pkg/model"
 	"net/http"
 	"time"
 )
@@ -24,29 +24,24 @@ func NewPrometheusPublisher(host string, port int, job string) *PrometheusPublis
 	}
 }
 
-func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64) error {
+func (p *PrometheusPublisher) PublishMetrics(result any, timestamp int64, totalLatency time.Duration) error {
 	uri := fmt.Sprintf("http://%s:%d/metrics/job/%s", p.host, p.port, p.job)
-
 	var metrics string
-
 	switch r := result.(type) {
-	case model.TCPProbeResult:
+	case pkgModel.TCPProbeResultDTO:
 		metrics = fmt.Sprintf(
-			"tcp_rtt{ip=\"%s\", port=\"%s\", timestamp=\"%d\"} %f\n"+
-				"tcp_success{ip=\"%s\", port=\"%s\", timestamp=\"%d\"} %d\n",
-			r.IP, r.Port, timestamp, r.RTT.Seconds()*1000,
-			r.IP, r.Port, timestamp, boolToInt(r.Success),
+			"tcp_rtt{ip=\"%s\", port=\"%s\"} %f\n"+"tcp_success{ip=\"%s\", port=\"%s\"} %d\n"+
+				"tcp_last_seen{ip=\"%s\", port=\"%s\"} %d\n"+"tcp_latency{ip=\"%s\", port=\"%s\"} %f\n",
+			r.IP, r.Port, r.RTT.Seconds()*1000, r.IP, r.Port, boolToInt(r.Success),
+			r.IP, r.Port, timestamp, r.IP, r.Port, totalLatency.Seconds()*1000,
 		)
-	case model.ICMPProbeResult: // ICMP
+	case pkgModel.ICMPProbeResultDTO: // ICMP
 		metrics = fmt.Sprintf(
-			"icmp_packet_loss{ip=\"%s\", timestamp=\"%d\"} %f\n"+
-				"icmp_rtt_min{ip=\"%s\", timestamp=\"%d\"} %f\n"+
-				"icmp_rtt_max{ip=\"%s\", timestamp=\"%d\"} %f\n"+
-				"icmp_rtt_avg{ip=\"%s\", timestamp=\"%d\"} %f\n",
-			r.IP, timestamp, r.PacketLoss,
-			r.IP, timestamp, float64(r.MinRTT.Microseconds())/1000.0,
-			r.IP, timestamp, float64(r.MaxRTT.Microseconds())/1000.0,
-			r.IP, timestamp, float64(r.AvgRTT.Microseconds())/1000.0,
+			"icmp_packet_loss{ip=\"%s\"} %f\n"+"icmp_rtt_min{ip=\"%s\"} %f\n"+"icmp_rtt_max{ip=\"%s\"} %f\n"+
+				"icmp_rtt_avg{ip=\"%s\"} %f\n"+"icmp_last_seen{ip=\"%s\"} %d\n"+"icmp_latency{ip=\"%s\"} %f\n",
+			r.IP, r.PacketLoss,
+			r.IP, float64(r.MinRTT.Microseconds())/1000.0, r.IP, float64(r.MaxRTT.Microseconds())/1000.0,
+			r.IP, float64(r.AvgRTT.Microseconds())/1000.0, r.IP, timestamp, r.IP, totalLatency.Seconds()*1000,
 		)
 	default:
 		return fmt.Errorf("unsupported result type: %T", r)
